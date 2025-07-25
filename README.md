@@ -1,81 +1,58 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Тайфун — голосовой помощник</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #eef; }
-    #face { font-size: 80px; margin-bottom: 20px; }
-    #status { font-size: 18px; color: #333; }
-  </style>
+  <meta charset="UTF-8">
+  <title>Тайфун — Умный Ассистент</title>
 </head>
 <body>
-  <div id="face">🎙️</div>
-  <h1>Тайфун — голосовой помощник</h1>
-  <p id="status">Нажми разрешить микрофон и говори</p>
+  <h1>Привет, я Тайфун!</h1>
+  <button onclick="startRecognition()">🎙 Слушать</button>
+  <p id="result">Говори...</p>
 
   <script>
-    const face = document.getElementById('face');
-    const status = document.getElementById('status');
+    const resultEl = document.getElementById("result");
 
-    let recognition;
-    if ('webkitSpeechRecognition' in window) {
-      recognition = new webkitSpeechRecognition();
-    } else if ('SpeechRecognition' in window) {
-      recognition = new SpeechRecognition();
-    } else {
-      status.textContent = 'Микрофон не поддерживается в этом браузере.';
+    // Проверка поддержки распознавания речи
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      resultEl.innerText = "Твой браузер не поддерживает распознавание речи.";
     }
 
-    if (recognition) {
-      recognition.lang = 'ru-RU';
-      recognition.continuous = false;
-      recognition.interimResults = false;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.interimResults = false;
 
-      recognition.onstart = () => {
-        face.textContent = '👂';
-        status.textContent = 'Слушаю...';
-      };
+    recognition.onresult = (event) => {
+      const text = event.results[0][0].transcript;
+      resultEl.innerText = "Ты сказал: " + text;
+      speakAnswer(text);
+    };
 
-      recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript.toLowerCase();
-        face.textContent = '🤔';
-        status.textContent = 'Ты сказал: ' + text;
-        handleCommand(text);
-      };
+    recognition.onerror = (e) => {
+      resultEl.innerText = "Ошибка: " + e.error;
+    };
 
-      recognition.onerror = () => {
-        face.textContent = '😕';
-        status.textContent = 'Ошибка распознавания.';
-      };
-
-      recognition.onend = () => {
-        setTimeout(() => recognition.start(), 1000);
-      };
-
+    function startRecognition() {
       recognition.start();
+      resultEl.innerText = "Слушаю...";
     }
 
-    function handleCommand(text) {
-      let reply = '';
-      if (text.includes('привет')) reply = 'Привет! Я Тайфун.';
-      else if (text.includes('как дела')) reply = 'Отлично! А у тебя?';
-      else if (text.includes('время')) {
-        const now = new Date();
-        reply = `Сейчас ${now.getHours()} часов ${now.getMinutes()} минут.`;
-      } else if (text.includes('пока')) reply = 'Пока! Увидимся!';
-      else reply = 'Извини, я не понимаю эту команду.';
+    function speakAnswer(text) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance();
 
-      say(reply);
-    }
-
-    function say(text) {
-      const utter = new SpeechSynthesisUtterance(text);
+      utter.text = processCommand(text);
       utter.lang = 'ru-RU';
-      speechSynthesis.speak(utter);
-      face.textContent = '🗣️';
-      status.textContent = 'Говорю: ' + text;
+      synth.speak(utter);
+    }
+
+    function processCommand(text) {
+      text = text.toLowerCase();
+      if (text.includes("привет")) return "Привет, чем могу помочь?";
+      if (text.includes("как дела")) return "У меня всё хорошо!";
+      if (text.includes("погода")) return "Погода отличная, как у тебя?";
+      return "Я тебя понял!";
     }
   </script>
 </body>
